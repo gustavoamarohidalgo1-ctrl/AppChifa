@@ -1,0 +1,99 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() && exists(/databases/$(database)/documents/adminUsers/$(request.auth.uid));
+    }
+
+    function staffRole() {
+      return get(/databases/$(database)/documents/adminUsers/$(request.auth.uid)).data.role;
+    }
+
+    function isOwner() {
+      return isAdmin() && staffRole() == "owner";
+    }
+
+    function canManageMenu() {
+      return isOwner() || (isAdmin() && staffRole() == "cashier");
+    }
+
+    match /menuItems/{menuItemId} {
+      allow read: if true;
+      allow create, delete: if canManageMenu();
+      allow update: if canManageMenu()
+        || (
+          isAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["stock", "active", "updatedAt"])
+          && request.resource.data.stock is number
+          && request.resource.data.active is bool
+        );
+    }
+
+    match /customers/{customerId} {
+      allow read: if isAdmin()
+        || (signedIn() && request.auth.uid == customerId);
+      allow create, update: if signedIn()
+        && request.auth.uid == customerId
+        && request.resource.data.email is string
+        && request.resource.data.name is string;
+      allow delete: if false;
+    }
+
+    match /businessSettings/{settingsId} {
+      allow read: if settingsId == "public";
+      allow create, update, delete: if isOwner();
+    }
+
+    match /orders/{orderId} {
+      allow create: if signedIn()
+        && request.resource.data.customerUid == request.auth.uid
+        && request.resource.data.customerEmail is string
+        && request.resource.data.status == "recibido"
+        && request.resource.data.discount is number
+        && request.resource.data.total is number
+        && request.resource.data.items is list
+        && request.resource.data.extras is list
+        && request.resource.data.extrasTotal is number
+        && request.resource.data.deliveryZone.id is string
+        && request.resource.data.deliveryZone.name is string
+        && request.resource.data.deliveryZone.fee is number
+        && request.resource.data.fulfillment.mode is string
+        && request.resource.data.fulfillment.label is string
+        && request.resource.data.fulfillment.estimatedMinutes is number
+        && request.resource.data.payment.method is string
+        && request.resource.data.payment.methodLabel is string
+        && request.resource.data.payment.reference is string
+        && request.resource.data.payment.status == "pendiente_verificacion"
+        && request.resource.data.payment.paidBeforeSend is bool
+        && request.resource.data.customer.name is string
+        && request.resource.data.customer.phone is string;
+
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.customerUid == request.auth.uid);
+
+      allow update: if isAdmin()
+        || (
+          signedIn()
+          && resource.data.customerUid == request.auth.uid
+          && resource.data.status == "recibido"
+          && request.resource.data.status == "cancelado"
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status", "cancellation", "updatedAt"])
+          && request.resource.data.cancellation.by == "customer"
+          && request.resource.data.cancellation.reason is string
+        );
+
+      allow delete: if isAdmin();
+    }
+
+    match /adminUsers/{userId} {
+      allow read: if isOwner()
+        || (signedIn() && request.auth.uid == userId);
+      allow write: if false;
+    }
+  }
+}

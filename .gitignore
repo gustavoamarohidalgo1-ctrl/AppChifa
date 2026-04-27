@@ -1,0 +1,11 @@
+node_modules/
+.expo/
+dist/
+admin/dist/
+.env
+.env.local
+server/db.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store

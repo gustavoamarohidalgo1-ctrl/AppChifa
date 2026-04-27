@@ -1,0 +1,36 @@
+{
+  "name": "app-chifa",
+  "version": "1.0.0",
+  "private": true,
+  "main": "expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start",
+    "admin": "vite --config admin/vite.config.mjs",
+    "admin:build": "vite build --config admin/vite.config.mjs",
+    "deploy:rules": "FIREBASE_CLI_DISABLE_UPDATE_CHECK=1 firebase deploy --only firestore:rules,storage",
+    "deploy:firestore": "FIREBASE_CLI_DISABLE_UPDATE_CHECK=1 firebase deploy --only firestore:rules --project chifa-9e41c",
+    "server": "node server/index.mjs",
+    "dev:ios": "node scripts/dev-ios.mjs",
+    "ios": "expo start --ios",
+    "android": "expo start --android",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@expo/vector-icons": "^14.1.0",
+    "@react-native-async-storage/async-storage": "2.1.2",
+    "expo": "^53.0.0",
+    "expo-asset": "~11.1.7",
+    "expo-constants": "~17.1.8",
+    "expo-device": "~7.1.4",
+    "expo-notifications": "~0.31.5",
+    "expo-status-bar": "~2.2.3",
+    "firebase": "^12.12.1",
+    "react": "19.0.0",
+    "react-native": "0.79.6",
+    "react-native-safe-area-context": "5.4.0",
+    "vite": "^8.0.10"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
